@@ -13,6 +13,7 @@ import (
 	"log/syslog"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -32,7 +33,7 @@ var WarnLevel = map[int]string{
 func notify(warnLevel int, title string, message string) {
 	err := beeep.Notify(title, message, WarnLevel[warnLevel])
 	if err != nil {
-		log.Fatalf("Notify error: %v", err)
+		log.Printf("Notify error: %v", err)
 	}
 }
 
@@ -41,7 +42,13 @@ func notify(warnLevel int, title string, message string) {
 func readSettingsFile() (disks []string, timeout int) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatalf("Error getting home dir: %v", err)
+		log.Printf("Error getting home dir: %v", err)
+		return nil, 30
+	}
+
+	dir := filepath.Join(home, ".local", "share", "btrfs_observer")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.Printf("Can't create config dir %s: %v\n", dir, err)
 	}
 
 	timeoutFile, err := os.OpenFile(home+"/.local/share/btrfs_observer/timeout.txt", os.O_CREATE|os.O_RDWR, 0644)
@@ -112,7 +119,10 @@ func (p *program) run() {
 				fields := strings.Fields(line)
 				if len(fields) >= 2 {
 					var num int
-					fmt.Sscanf(fields[1], "%d", &num)
+					_, err = fmt.Sscanf(fields[1], "%d", &num)
+					if err != nil {
+						log.Printf("Error parsing numbers: %v", err)
+					}
 					numbers = append(numbers, num)
 					errsNum += num
 				}

@@ -19,25 +19,24 @@ sudo curl -L "$BIN_URL" -o "/usr/local/bin/$BIN_NAME"
 sudo chmod +x "/usr/local/bin/$BIN_NAME"
 
 # 5. Создаём systemd сервис для автозапуска
-SERVICE_FILE="/etc/systemd/system/$BIN_NAME.service"
+SERVICE_FILE="/etc/systemd/system/btrfs-observer.service"
 sudo bash -c "cat > $SERVICE_FILE" <<EOL
 [Unit]
-Description=$BIN_NAME Service
-After=network.target
+Description=BTRFS Observer Service
+After=graphical-session.target
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/$BIN_NAME
-Restart=always
-User=root
+Restart=on-failure
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 EOL
 
 # 6. Перезагружаем systemd и включаем автозапуск
-sudo systemctl daemon-reload
-sudo systemctl enable "$BIN_NAME.service"
-sudo systemctl start "$BIN_NAME.service"
+sudo systemctl --user daemon-reload
+sudo systemctl --user enable "btrfs-observer.service"
+sudo systemctl --user -u btrfs-observer -f
 
 echo "$BIN_NAME is installed!"
