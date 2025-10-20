@@ -11,7 +11,7 @@ DISKS_FILE="$DIR/disks.txt"
 echo "Enter disks(Ctrl+D to finish):"
 cat > "$DISKS_FILE"
 
-BIN_URL="https://github.com/Mir04ka/btrfs-observer/releases/download/beta/btrfs-observer-0.1-beta"
+BIN_URL="https://github.com/Mir04ka/btrfs-observer/releases/download/beta/btrfs-observer-0.2-beta"
 BIN_NAME=$(basename "$BIN_URL")
 sudo curl -L "$BIN_URL" -o "/usr/local/bin/$BIN_NAME"
 sudo chmod +x "/usr/local/bin/$BIN_NAME"
