@@ -1,8 +1,3 @@
-// Copyright 2015 Daniel Theophanes.
-// Use of this source code is governed by a zlib-style
-// license that can be found in the LICENSE file.
-
-// simple does nothing except block while running the service.
 package main
 
 import (
@@ -18,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gen2brain/beeep"
-	"github.com/kardianos/service" // background process
+	"github.com/gen2brain/beeep"   // System notifications
+	"github.com/kardianos/service" // Background process
 )
 
 // System notifications
@@ -33,11 +28,11 @@ var WarnLevel = map[int]string{
 func notify(warnLevel int, title string, message string) {
 	err := beeep.Notify(title, message, WarnLevel[warnLevel])
 	if err != nil {
-		log.Printf("Notify error: %v", err)
+		log.Printf("Notify error: %v", "")
 	}
 }
 
-// Config file
+// Config files
 
 func readSettingsFile() (disks []string, timeout int) {
 	home, err := os.UserHomeDir()
@@ -53,7 +48,7 @@ func readSettingsFile() (disks []string, timeout int) {
 
 	timeoutFile, err := os.OpenFile(home+"/.local/share/btrfs_observer/timeout.txt", os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		log.Fatalf("File opening error: %v", err)
+		fmt.Println("File opening error: %v", err)
 	}
 	defer timeoutFile.Close()
 
@@ -105,11 +100,22 @@ func (p *program) run() {
 		disks, timeout := readSettingsFile()
 
 		for _, disk := range disks {
-			cmd := exec.Command("sudo", "btrfs", "device", "stats", disk)
+			home, err := os.UserHomeDir()
+			if err != nil {
+				log.Printf("Error getting home dir: %v", err)
+				continue
+			}
+
+			fmt.Println("auf")
+
+			cmd := exec.Command("sudo", home+".local/bin/btrfs-stats-wrapper.sh", disk)
 			output, err := cmd.CombinedOutput()
 			if err != nil {
-				log.Fatalf("Exec error: %v\nВывод: %s", err, output)
+				fmt.Println("Exec error: %v\nВывод: %s", err, string(output))
+				//log.Fatalf("Exec error: %v\nВывод: %s", err, output)
 			}
+
+			fmt.Println("kek")
 
 			lines := strings.Split(string(output), "\n")
 
