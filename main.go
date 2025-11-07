@@ -48,9 +48,14 @@ func readSettingsFile() (disks []string, timeout int) {
 
 	timeoutFile, err := os.OpenFile(home+"/.local/share/btrfs_observer/timeout.txt", os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		fmt.Println("File opening error: %v", err)
+		log.Println("File opening error: %v", err)
 	}
-	defer timeoutFile.Close()
+	defer func(timeoutFile *os.File) {
+		err := timeoutFile.Close()
+		if err != nil {
+			log.Printf("Error closing timeout file: %v\n", err)
+		}
+	}(timeoutFile)
 
 	buf := make([]byte, 100)
 	n, err := timeoutFile.Read(buf)
@@ -65,7 +70,12 @@ func readSettingsFile() (disks []string, timeout int) {
 	if err != nil {
 		log.Fatalf("File opening error: %v", err)
 	}
-	defer disksFile.Close()
+	defer func(disksFile *os.File) {
+		err := disksFile.Close()
+		if err != nil {
+			log.Printf("Error closing disks file: %v\n", err)
+		}
+	}(disksFile)
 
 	scanner := bufio.NewScanner(disksFile)
 	for scanner.Scan() {
@@ -106,16 +116,12 @@ func (p *program) run() {
 				continue
 			}
 
-			fmt.Println("auf")
-
-			cmd := exec.Command("sudo", home+".local/bin/btrfs-stats-wrapper.sh", disk)
+			cmd := exec.Command("sudo", home+"/.local/bin/btrfs-stats-wrapper.sh", disk)
 			output, err := cmd.CombinedOutput()
 			if err != nil {
-				fmt.Println("Exec error: %v\nВывод: %s", err, string(output))
+				log.Printf("Exec error: %v\nOutput: %s", err, string(output))
 				//log.Fatalf("Exec error: %v\nВывод: %s", err, output)
 			}
-
-			fmt.Println("kek")
 
 			lines := strings.Split(string(output), "\n")
 
@@ -165,9 +171,14 @@ func main() {
 	// Logger init
 	sysLog, err := syslog.New(syslog.LOG_INFO|syslog.LOG_LOCAL0, "myapp")
 	if err != nil {
-		log.Fatalf("Failed to connect to syslog: %v", err)
+		log.Printf("Failed to connect to syslog: %v", err)
 	}
-	defer sysLog.Close()
+	defer func(sysLog *syslog.Writer) {
+		err := sysLog.Close()
+		if err != nil {
+			log.Printf("Error closing syslog: %v", err)
+		}
+	}(sysLog)
 
 	log.SetOutput(sysLog)
 
@@ -183,6 +194,9 @@ func main() {
 	}
 	err = s.Run()
 	if err != nil {
-		logger.Error(err)
+		err := logger.Error(err)
+		if err != nil {
+			return
+		}
 	}
 }

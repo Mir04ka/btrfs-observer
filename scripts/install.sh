@@ -20,17 +20,17 @@ TIMEOUT_FILE="$DIR/timeout.txt"
 read -p "Timeout(seconds): " TIMEOUT
 echo "$TIMEOUT" > "$TIMEOUT_FILE"
 
-sudo chown -R $USER_NAME:$USER_NAME $TIMEOUT_FILE
+chown -R $USER_NAME:$USER_NAME $TIMEOUT_FILE
 
 # Create disks.txt file
 DISKS_FILE="$DIR/disks.txt"
 echo "Enter disks (one per line, Ctrl+D to finish):"
 cat > "$DISKS_FILE"
 
-sudo chown -R $USER_NAME:$USER_NAME $DISKS_FILE
+chown -R $USER_NAME:$USER_NAME $DISKS_FILE
 
 # Change the user
-sudo chown -R $USER_NAME:$USER_NAME ~/.local/share/btrfs_observer/
+chown -R $USER_NAME:$USER_NAME ~/.local/share/btrfs_observer/
 
 # Create btrfs-stats-wrapper script
 SCRIPT_PATH="$USER_HOME/.local/bin/btrfs-stats-wrapper.sh"
@@ -52,7 +52,20 @@ EOL
 chmod +x $SCRIPT_PATH
 
 # Add btrfs-stats-wrapper to sudoers
-echo "$USER_NAME ALL=(ALL) NOPASSWD: $SCRIPT_PATH" > "$SUDOERS_FILE"
+if [ ! -f "$SCRIPT_PATH" ]; then
+    echo "Script $SCRIPT_PATH not found"
+    exit 1
+fi
+
+SUDOERS_FILE="/etc/sudoers.d/btrfs-observer-$USER_NAME"
+echo "$USER_NAME ALL=(root) NOPASSWD: $SCRIPT_PATH" > "$SUDOERS_FILE"
+chmod 440 "$SUDOERS_FILE"
+
+if ! visudo -c; then
+    echo "Sudoers file mistake! Removing file..."
+    rm -f "$SUDOERS_FILE"
+    exit 1
+fi
 
 # Check sudoers syntax
 visudo -cf "$SUDOERS_FILE"
@@ -77,7 +90,7 @@ BIN_NAME=$(basename "$BIN_URL")
 mkdir -p "$USER_HOME/.local/bin"
 curl -L "$BIN_URL" -o "$USER_HOME/.local/bin/$BIN_NAME"
 chmod +x "$USER_HOME/.local/bin/$BIN_NAME"
-sudo chown $USER_NAME:$USER_NAME $USER_HOME/.local/bin/btrfs-observer
+chown $USER_NAME:$USER_NAME $USER_HOME/.local/bin/btrfs-observer
 
 # Create user unit
 USER_UNIT_DIR="$USER_HOME/.config/systemd/user"
@@ -101,6 +114,7 @@ EOL
 loginctl enable-linger "$USER_NAME"
 
 # Reload and enable user service
+systemctl daemon-reload
 sudo -u "$USER_NAME" XDG_RUNTIME_DIR="/run/user/$(id -u $USER_NAME)" systemctl --user daemon-reload
 sudo -u "$USER_NAME" XDG_RUNTIME_DIR="/run/user/$(id -u $USER_NAME)" systemctl --user enable --now btrfs-observer.service
 
