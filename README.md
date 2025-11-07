@@ -2,7 +2,10 @@
 A small background script, which regulary check if your BTRFS-based disk has some errors like corrupted blocks etc.
 
 ## How to install
-1. 
+```bash
+wget https://raw.githubusercontent.com/Mir04ka/btrfs-observer/refs/heads/master/scripts/install.sh
+bash install.sh
+```
 
 ## Requirements
 - Linux-based OS
@@ -11,6 +14,8 @@ A small background script, which regulary check if your BTRFS-based disk has som
 - KDE fedora 42
 
 ## TODO
+- [ ] RAM optimisation
+- [ ] Logs spamming fix
 - [ ] Check if disk mounted before running
 - [ ] Memory to notify if errors count is rising
-- [ ] Better icons
+
